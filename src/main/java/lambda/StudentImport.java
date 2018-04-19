@@ -7,7 +7,7 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 
 import controller.GithubApi;
-import controller.ImportEngine;
+import controller.StudentImportEngine;
 import controller.Pike13Api;
 import model.MySqlDatabase;
 
@@ -24,12 +24,12 @@ public class StudentImport {
 		DateTime today = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"));
 
 		LambdaLogger logger = context.getLogger();
-		logger.log("Input: " + input + " for " + today.toString("yyyy-MM-dd HH:mm:ss") + "\n");
+		logger.log(today.toString("yyyy-MM-dd HH:mm:ss") + " " + input + "\n");
 
 		// Connect to database
 		sqlDb = new MySqlDatabase(System.getenv("PASSWORD"), MySqlDatabase.STUDENT_IMPORT_NO_SSH);
 		if (sqlDb.connectDatabase()) {
-			ImportEngine importer = new ImportEngine(sqlDb);
+			StudentImportEngine importer = new StudentImportEngine(sqlDb);
 
 			// Connect to Pike13 and import data
 			Pike13Api pike13Api = new Pike13Api(sqlDb, System.getenv("PIKE13_KEY"));

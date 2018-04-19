@@ -83,7 +83,13 @@
     
     <dependency>
       <groupId>tracker.controller</groupId>
-      <artifactId>import-engine</artifactId>
+      <artifactId>student-import-engine</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>tracker.controller</groupId>
+      <artifactId>salesforce-import-engine</artifactId>
       <version>1.0.0</version>
     </dependency>
     
@@ -109,6 +115,18 @@
       <groupId>gson</groupId>
       <artifactId>gson-java</artifactId>
       <version>2.6.2</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>sforce.soap</groupId>
+      <artifactId>enterprise</artifactId>
+      <version>11.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>sforce</groupId>
+      <artifactId>wsc</artifactId>
+      <version>23</version>
     </dependency>
     
   </dependencies>
