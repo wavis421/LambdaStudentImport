@@ -17,8 +17,9 @@ import model.MySqlDatabase;
 import model.StudentNameModel;
 
 public class SalesForceImport {
-	// Import +/- 30 days
-	private static final int DATE_RANGE_INTERVAL_IN_DAYS = 30;
+	// Import -30 to +45 days
+	private static final int DATE_RANGE_PAST_IN_DAYS = 30;
+	private static final int DATE_RANGE_FUTURE_IN_DAYS = 45;
 
 	MySqlDatabase sqlDb;
 	String startDate, endDate;
@@ -28,8 +29,8 @@ public class SalesForceImport {
 		// Set start/end date to -30/+90 days
 		DateTime t = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"));
 		String today = t.toString("yyyy-MM-dd HH:mm:ss");
-		startDate = t.minusDays(DATE_RANGE_INTERVAL_IN_DAYS).toString("yyyy-MM-dd");
-		endDate = t.plusDays(DATE_RANGE_INTERVAL_IN_DAYS).toString("yyyy-MM-dd");
+		startDate = t.minusDays(DATE_RANGE_PAST_IN_DAYS).toString("yyyy-MM-dd");
+		endDate = t.plusDays(DATE_RANGE_FUTURE_IN_DAYS).toString("yyyy-MM-dd");
 
 		LambdaLogger logger = context.getLogger();
 		logger.log(today + " " + input + "\n");
