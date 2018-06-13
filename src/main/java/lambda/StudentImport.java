@@ -33,7 +33,7 @@ public class StudentImport {
 			Pike13Api pike13Api = new Pike13Api(sqlDb, System.getenv("PIKE13_KEY"));
 			importer.importStudentsFromPike13(pike13Api);
 			importer.importAttendanceFromPike13(startDateString, pike13Api);
-//			importer.importCourseAttendanceFromPike13(startDateString, courseEndDate, pike13Api);
+			importer.importCourseAttendanceFromPike13(startDateString, courseEndDate, pike13Api);
 			importer.importScheduleFromPike13(pike13Api);
 			importer.importCoursesFromPike13(pike13Api);
 
