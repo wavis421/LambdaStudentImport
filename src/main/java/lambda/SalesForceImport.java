@@ -18,7 +18,7 @@ import model.StudentNameModel;
 
 public class SalesForceImport {
 	// Import -30 to +45 days
-	private static final int DATE_RANGE_PAST_IN_DAYS = 30;
+	private static final int DATE_RANGE_PAST_IN_DAYS = 21;
 	private static final int DATE_RANGE_FUTURE_IN_DAYS = 45;
 
 	MySqlDatabase sqlDb;
