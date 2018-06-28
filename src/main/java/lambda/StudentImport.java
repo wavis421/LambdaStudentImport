@@ -9,6 +9,7 @@ import com.amazonaws.services.lambda.runtime.LambdaLogger;
 import controller.GithubApi;
 import controller.Pike13Api;
 import controller.StudentImportEngine;
+import model.LocationLookup;
 import model.MySqlDatabase;
 
 public class StudentImport {
@@ -30,6 +31,7 @@ public class StudentImport {
 		sqlDb = new MySqlDatabase(System.getenv("PASSWORD"), MySqlDatabase.STUDENT_IMPORT_NO_SSH);
 		if (sqlDb.connectDatabase()) {
 			StudentImportEngine importer = new StudentImportEngine(sqlDb);
+			LocationLookup.setLocationData(sqlDb.getLocationList());
 
 			// Connect to Pike13 and import data
 			Pike13Api pike13Api = new Pike13Api(sqlDb, System.getenv("PIKE13_KEY"));

@@ -12,6 +12,7 @@ import com.sforce.ws.ConnectorConfig;
 
 import controller.Pike13Api;
 import controller.SalesForceImportEngine;
+import model.LocationLookup;
 import model.LogDataModel;
 import model.MySqlDatabase;
 import model.StudentNameModel;
@@ -66,6 +67,7 @@ public class SalesForceImport {
 
 		// Perform the update to SalesForce
 		SalesForceImportEngine importer = new SalesForceImportEngine(sqlDb, pike13Api, salesForceApi);
+		LocationLookup.setLocationData(sqlDb.getLocationList());
 		importer.updateSalesForce(today, startDate, endDate);
 
 		// Clean up and exit
