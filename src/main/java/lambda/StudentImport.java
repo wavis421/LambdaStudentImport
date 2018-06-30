@@ -11,6 +11,8 @@ import controller.Pike13Api;
 import controller.StudentImportEngine;
 import model.LocationLookup;
 import model.MySqlDatabase;
+import model.MySqlDbImports;
+import model.MySqlDbLogging;
 
 public class StudentImport {
 
@@ -30,7 +32,9 @@ public class StudentImport {
 		// Connect to database
 		sqlDb = new MySqlDatabase(System.getenv("PASSWORD"), MySqlDatabase.STUDENT_IMPORT_NO_SSH);
 		if (sqlDb.connectDatabase()) {
-			StudentImportEngine importer = new StudentImportEngine(sqlDb);
+			new MySqlDbLogging(sqlDb);
+			MySqlDbImports sqlImportDb = new MySqlDbImports(sqlDb);
+			StudentImportEngine importer = new StudentImportEngine(sqlDb, sqlImportDb);
 			LocationLookup.setLocationData(sqlDb.getLocationList());
 
 			// Connect to Pike13 and import data

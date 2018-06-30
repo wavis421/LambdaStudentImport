@@ -15,6 +15,7 @@ import controller.SalesForceImportEngine;
 import model.LocationLookup;
 import model.LogDataModel;
 import model.MySqlDatabase;
+import model.MySqlDbLogging;
 import model.StudentNameModel;
 
 public class SalesForceImport {
@@ -43,7 +44,9 @@ public class SalesForceImport {
 			return ("Start: " + today + ", End: " + (new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"))
 					.toString("yyyy-MM-dd HH:mm:ss")));
 		}
-		sqlDb.insertLogData(LogDataModel.STARTING_SALES_FORCE_IMPORT, new StudentNameModel("", "", false), 0,
+		
+		new MySqlDbLogging(sqlDb);
+		MySqlDbLogging.insertLogData(LogDataModel.STARTING_SALES_FORCE_IMPORT, new StudentNameModel("", "", false), 0,
 				" from " + startDate + " to " + endDate + " ***");
 
 		// Connect to Pike13
@@ -79,12 +82,12 @@ public class SalesForceImport {
 	private void lambdaFunctionEnd(int errorCode, String errorMessage) {
 		if (errorCode == -1) {
 			// Success
-			sqlDb.insertLogData(LogDataModel.SALES_FORCE_IMPORT_COMPLETE, new StudentNameModel("", "", false), 0,
+			MySqlDbLogging.insertLogData(LogDataModel.SALES_FORCE_IMPORT_COMPLETE, new StudentNameModel("", "", false), 0,
 					" from " + startDate + " to " + endDate + " ***");
 		} else {
 			// Failure
-			sqlDb.insertLogData(errorCode, new StudentNameModel("", "", false), 0, ": " + errorMessage);
-			sqlDb.insertLogData(LogDataModel.SALES_FORCE_IMPORT_ABORTED, new StudentNameModel("", "", false), 0,
+			MySqlDbLogging.insertLogData(errorCode, new StudentNameModel("", "", false), 0, ": " + errorMessage);
+			MySqlDbLogging.insertLogData(LogDataModel.SALES_FORCE_IMPORT_ABORTED, new StudentNameModel("", "", false), 0,
 					" from " + startDate + " to " + endDate + " ***");
 		}
 		sqlDb.disconnectDatabase();
