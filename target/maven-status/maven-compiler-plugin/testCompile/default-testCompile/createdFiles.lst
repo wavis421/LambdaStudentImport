@@ -1,3 +1,4 @@
+com\amazonaws\lambda\league\StudentImportTest.class
 com\amazonaws\lambda\league\TestUtils$TestJacksonMapperModule.class
 com\amazonaws\lambda\league\TestUtils$DynamodbEventMixin$StreamRecordMixin.class
 com\amazonaws\lambda\league\TestContext.class

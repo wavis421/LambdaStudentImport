@@ -10,9 +10,11 @@ import controller.GithubApi;
 import controller.Pike13Api;
 import controller.StudentImportEngine;
 import model.LocationLookup;
+import model.LogDataModel;
 import model.MySqlDatabase;
 import model.MySqlDbImports;
 import model.MySqlDbLogging;
+import model.StudentNameModel;
 
 public class StudentImport {
 
@@ -33,6 +35,9 @@ public class StudentImport {
 		sqlDb = new MySqlDatabase(System.getenv("PASSWORD"), MySqlDatabase.STUDENT_IMPORT_NO_SSH);
 		if (sqlDb.connectDatabase()) {
 			new MySqlDbLogging(sqlDb);
+			MySqlDbLogging.insertLogData(LogDataModel.STARTING_TRACKER_IMPORT, new StudentNameModel("", "", false), 0,
+					" for " + today.toString("yyyy-MM-dd") + " ***");
+
 			MySqlDbImports sqlImportDb = new MySqlDbImports(sqlDb);
 			StudentImportEngine importer = new StudentImportEngine(sqlDb, sqlImportDb);
 			LocationLookup.setLocationData(sqlDb.getLocationList());
@@ -49,6 +54,8 @@ public class StudentImport {
 			GithubApi githubApi = new GithubApi(sqlDb, System.getenv("GITHUB_KEY"));
 			importer.importGithubComments(startDateString, githubApi);
 
+			MySqlDbLogging.insertLogData(LogDataModel.TRACKER_IMPORT_COMPLETE, new StudentNameModel("", "", false), 0,
+					" for " + today.toString("yyyy-MM-dd") + " ***");
 			sqlDb.disconnectDatabase();
 		}
 
