@@ -70,61 +70,37 @@
     
     <!-- The following dependencies were added by Wendy 2/2/2018 -->
     <dependency>
-      <groupId>tracker.model</groupId>
-      <artifactId>tracker-db</artifactId>
-      <version>1.0.0</version>
+      <groupId>league-importer</groupId>
+      <artifactId>league-trackr-db</artifactId>
+      <version>5.0</version>
     </dependency>
     
     <dependency>
-      <groupId>tracker.controller</groupId>
-      <artifactId>tracker-api</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>tracker.controller</groupId>
-      <artifactId>student-import-engine</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>tracker.controller</groupId>
-      <artifactId>salesforce-import-engine</artifactId>
-      <version>1.0.0</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>mysql</groupId>
+      <groupId>league-importer</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>5.1.40</version>
     </dependency>
     
     <dependency>
-      <groupId>egit</groupId>
+      <groupId>league-importer</groupId>
       <artifactId>egit-github</artifactId>
       <version>2.1.5</version>
     </dependency>
     
     <dependency>
-      <groupId>json</groupId>
+      <groupId>league-importer</groupId>
       <artifactId>json-java</artifactId>
       <version>1.0.4</version>
     </dependency>
     
     <dependency>
-      <groupId>gson</groupId>
-      <artifactId>gson-java</artifactId>
-      <version>2.6.2</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>sforce.soap</groupId>
+      <groupId>league-importer.sforce</groupId>
       <artifactId>enterprise</artifactId>
       <version>11.0</version>
     </dependency>
     
     <dependency>
-      <groupId>sforce</groupId>
+      <groupId>league-importer.sforce</groupId>
       <artifactId>wsc</artifactId>
       <version>23</version>
     </dependency>

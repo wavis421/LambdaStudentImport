@@ -10,7 +10,8 @@ import com.sforce.soap.enterprise.EnterpriseConnection;
 import com.sforce.ws.ConnectionException;
 import com.sforce.ws.ConnectorConfig;
 
-import controller.Pike13Api;
+import controller.Pike13Connect;
+import controller.Pike13SalesforceImport;
 import controller.SalesForceImportEngine;
 import model.LocationLookup;
 import model.LogDataModel;
@@ -51,7 +52,8 @@ public class SalesForceImport {
 				" from " + startDate + " to " + endDate + " ***");
 
 		// Connect to Pike13
-		Pike13Api pike13Api = new Pike13Api(sqlDb, System.getenv("PIKE13_KEY"));
+		Pike13Connect pike13Conn = new Pike13Connect(System.getenv("PIKE13_KEY"));
+		Pike13SalesforceImport pike13Api = new Pike13SalesforceImport(pike13Conn);
 
 		// Connect to SalesForce
 		EnterpriseConnection salesForceApi;

@@ -7,7 +7,8 @@ import com.amazonaws.services.lambda.runtime.Context;
 import com.amazonaws.services.lambda.runtime.LambdaLogger;
 
 import controller.GithubApi;
-import controller.Pike13Api;
+import controller.Pike13Connect;
+import controller.Pike13DbImport;
 import controller.StudentImportEngine;
 import model.LocationLookup;
 import model.LogDataModel;
@@ -48,22 +49,23 @@ public class StudentImport {
 					" for " + today.toString("yyyy-MM-dd") + " ***");
 
 			MySqlDbImports sqlImportDb = new MySqlDbImports(sqlDb);
-			StudentImportEngine importer = new StudentImportEngine(sqlDb, sqlImportDb);
+			StudentImportEngine importer = new StudentImportEngine(sqlImportDb);
 			LocationLookup.setLocationData(sqlDb.getLocationList());
 
 			// Remove log data older than 7 days
 			importer.removeOldLogData(7);
 
 			// Connect to Pike13 and import data
-			Pike13Api pike13Api = new Pike13Api(sqlDb, System.getenv("PIKE13_KEY"));
+			Pike13Connect pike13Conn = new Pike13Connect(System.getenv("PIKE13_KEY"));
+			Pike13DbImport pike13Api = new Pike13DbImport(sqlImportDb, pike13Conn);
 			importer.importStudentsFromPike13(pike13Api);
 			importer.importAttendanceFromPike13(startDateString, pike13Api);
 			importer.importScheduleFromPike13(pike13Api);
 			importer.importCoursesFromPike13(pike13Api);
 			importer.importCourseAttendanceFromPike13(startDateString, courseEndDate, pike13Api);
 
-			// Connect to github and import data
-			GithubApi githubApi = new GithubApi(sqlDb, System.getenv("GITHUB_KEY"));
+			// Connect to Github and import data
+			GithubApi githubApi = new GithubApi(sqlImportDb, System.getenv("GITHUB_KEY"));
 			importer.importGithubComments(startDateString, githubApi);
 
 			MySqlDbLogging.insertLogData(LogDataModel.TRACKER_IMPORT_COMPLETE, new StudentNameModel("", "", false), 0,
