@@ -2,7 +2,7 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.amazonaws.lambda</groupId>
+  <groupId>league-importer.lambda</groupId>
   <artifactId>league</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
@@ -39,7 +39,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>com.amazonaws</groupId>
+        <groupId>league-importer</groupId>
         <artifactId>aws-java-sdk-bom</artifactId>
         <version>1.11.267</version>
         <type>pom</type>
@@ -57,13 +57,13 @@
     </dependency>
 
     <dependency>
-      <groupId>com.amazonaws</groupId>
+      <groupId>league-importer</groupId>
       <artifactId>aws-lambda-java-events</artifactId>
       <version>1.3.0</version>
     </dependency>
     
     <dependency>
-      <groupId>com.amazonaws</groupId>
+      <groupId>league-importer</groupId>
       <artifactId>aws-lambda-java-core</artifactId>
       <version>1.1.0</version>
     </dependency>
@@ -73,6 +73,12 @@
       <groupId>league-importer</groupId>
       <artifactId>league-trackr-db</artifactId>
       <version>5.0</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>league-importer</groupId>
+      <artifactId>joda-time</artifactId>
+      <version>2.8.1</version>
     </dependency>
     
     <dependency>
@@ -94,14 +100,14 @@
     </dependency>
     
     <dependency>
-      <groupId>league-importer.sforce</groupId>
-      <artifactId>enterprise</artifactId>
+      <groupId>league-importer</groupId>
+      <artifactId>sforce-enterprise</artifactId>
       <version>11.0</version>
     </dependency>
     
     <dependency>
-      <groupId>league-importer.sforce</groupId>
-      <artifactId>wsc</artifactId>
+      <groupId>league-importer</groupId>
+      <artifactId>sforce-wsc</artifactId>
       <version>23</version>
     </dependency>
     
