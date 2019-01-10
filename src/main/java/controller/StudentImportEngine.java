@@ -117,12 +117,21 @@ public class StudentImportEngine {
 			String className = sched.getClassName();
 			int attCount = 0, ageCount = 0;
 			Double ageMin = 0.0, ageMax = 0.0, ageAvg = 0.0, ageTot = 0.0;
-			int[] moduleCnt = new int[10]; // Curr count for modules 0-9
+			int[][] moduleCnt = new int[8][10]; // Curr count by levels 0-7, for modules 0-9
+			int[] levelCnt = new int[8]; // Student count by level for this class
 
 			for (StudentModel stud : students) {
 				// Update for each student in this class
 				if (className.equals(stud.getCurrentClass()) || className.equals(stud.getRegisterClass())) {
-					attCount++;
+					attCount++; // Update attendance for this class
+					
+					// Increment count for current level
+					int level = 0;
+					if (!stud.getCurrentLevel().equals(""))
+						level = Integer.parseInt(stud.getCurrentLevel());
+					levelCnt[level]++;
+					
+					// Update min, max age
 					if (stud.getAge() > 0) {
 						ageCount++;
 						ageTot += stud.getAge();
@@ -130,29 +139,45 @@ public class StudentImportEngine {
 							ageMin = stud.getAge();
 						if (stud.getAge() > ageMax)
 							ageMax = stud.getAge();
-						if (stud.getCurrentModule() != null && !stud.getCurrentModule().equals("")
-								&& stud.getCurrentModule().charAt(0) >= '0' && stud.getCurrentModule().charAt(0) <= '9')
-							moduleCnt[stud.getCurrentModule().charAt(0) - '0']++;
 					}
+					
+					// Update count per level & module
+					if (stud.getCurrentModule() != null && !stud.getCurrentModule().equals("")
+							&& stud.getCurrentModule().charAt(0) >= '0' && stud.getCurrentModule().charAt(0) <= '9')
+						moduleCnt[level][stud.getCurrentModule().charAt(0) - '0']++;
 				}
 			}
-			// Update the fields for this scheduled class
-			if (ageCount > 0) {
-				String moduleString = "";
-				int recordCnt = attCount;
-				for (int i = 0; i < moduleCnt.length; i++) {
-					if (moduleCnt[i] > 0) {
-						recordCnt -= moduleCnt[i];
+			
+			// If any students in this scheduled class, update the level field for this class
+			if (attCount > 0) {
+				String levelString = "";
+				for (int i = 0; i < levelCnt.length; i++) { // Loop thru each level
+					if (levelCnt[i] > 0) {
+						String moduleString = "";
+						for (int j = 0; j < 10; j++) { // Loop thru each model for this level
+							if (moduleCnt[i][j] > 0) {
+								if (moduleString.equals(""))
+									moduleString = " (Mod ";
+								else
+									moduleString += ", ";
+								moduleString += j;
+							}
+						}
 						if (!moduleString.equals(""))
-							moduleString += ", ";
-						moduleString += moduleCnt[i] + "@Mod" + i;
+							moduleString += ")";
+						if (!levelString.equals(""))
+							levelString += ", ";
+						levelString += levelCnt[i] + "@L" + i + moduleString;
 					}
 				}
-				if (recordCnt > 0 && !moduleString.equals(""))
-					moduleString += ", " + recordCnt + "@?";
-				ageAvg = ageTot / ageCount;
-				sched.setMiscSchedFields(attCount, ageMin.toString().substring(0, 4), ageMax.toString().substring(0, 4),
-						ageAvg.toString().substring(0, 4), moduleString);
+				
+				// Update schedule with attendance and level info
+				if (ageCount > 0) {
+					ageAvg = ageTot / ageCount;
+					sched.setMiscSchedFields(attCount, ageMin.toString().substring(0, 4), ageMax.toString().substring(0, 4),
+							ageAvg.toString().substring(0, 4), levelString);
+				} else
+					sched.setMiscSchedFields(attCount, "", "", "", levelString);
 			} else {
 				sched.setMiscSchedFields(0, "", "", "", "");
 			}
