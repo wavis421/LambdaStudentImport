@@ -59,7 +59,8 @@ public class MySqlDbImports {
 							result.getString("AcctMgrEmail"), result.getString("EmergencyEmail"),
 							result.getString("Phone"), result.getString("AcctMgrPhone"), result.getString("HomePhone"),
 							result.getString("EmergencyPhone"), result.getString("CurrentModule"),
-							result.getString("CurrentLevel"), result.getString("RegisterClass"), result.getDate("LastVisitDate")));
+							result.getString("CurrentLevel"), result.getString("RegisterClass"),
+							result.getDate("LastVisitDate")));
 				}
 
 				result.close();
@@ -102,6 +103,7 @@ public class MySqlDbImports {
 
 			if (compare == 0) {
 				// ClientID and all data matches
+				checkMissingLevel(dbList.get(dbListIdx), importStudent);
 				dbListIdx++;
 				continue;
 
@@ -116,6 +118,7 @@ public class MySqlDbImports {
 				if (dbListIdx < dbListSize) {
 					if (dbList.get(dbListIdx).getClientID() == importStudent.getClientID()) {
 						// Now that clientID's match, compare and update again
+						checkMissingLevel(dbList.get(dbListIdx), importStudent);
 						if (dbList.get(dbListIdx).compareTo(importStudent) != 0) {
 							updateStudent(importStudent, dbList.get(dbListIdx));
 						}
@@ -135,10 +138,28 @@ public class MySqlDbImports {
 
 			} else {
 				// ClientID matches but data has changed
+				checkMissingLevel(dbList.get(dbListIdx), importStudent);
 				updateStudent(importStudent, dbList.get(dbListIdx));
 				dbListIdx++;
 			}
 		}
+	}
+
+	private void checkMissingLevel(StudentImportModel dbStudent, StudentImportModel importStudent) {
+		if (importStudent.getCurrLevel().equals("")
+				&& (isJavaClass(dbStudent.getCurrClass()) || isJavaClass(dbStudent.getRegClass()))) {
+			MySqlDbLogging.insertLogData(LogDataModel.MISSING_CURRENT_LEVEL,
+					new StudentNameModel(importStudent.getFirstName(), importStudent.getLastName(), true),
+					 importStudent.getClientID(), "");
+		}
+	}
+
+	private boolean isJavaClass(String className) {
+		if (className.startsWith("AD@") || className.startsWith("AG@") || className.startsWith("PG@")
+				|| className.startsWith("EL@"))
+			return true;
+		else
+			return false;
 	}
 
 	private void logMissingStudentData(StudentImportModel importStudent) {
@@ -165,12 +186,6 @@ public class MySqlDbImports {
 
 		if (importStudent.getGender() == GenderModel.getGenderUnknown())
 			MySqlDbLogging.insertLogData(LogDataModel.MISSING_GENDER,
-					new StudentNameModel(importStudent.getFirstName(), importStudent.getLastName(), true),
-					importStudent.getClientID(), "");
-
-		if (importStudent.getCurrLevel().equals("") && !importStudent.getStartDate().equals("")
-				&& importStudent.getFutureVisits() > 0)
-			MySqlDbLogging.insertLogData(LogDataModel.MISSING_CURRENT_LEVEL,
 					new StudentNameModel(importStudent.getFirstName(), importStudent.getLastName(), true),
 					importStudent.getClientID(), "");
 	}
@@ -202,7 +217,7 @@ public class MySqlDbImports {
 							result.getString("EmergencyPhone"), result.getString("Birthdate"),
 							result.getString("TASinceDate"), result.getInt("TAPastEvents"),
 							result.getString("CurrentLevel"), result.getString("CurrentClass"),
-							result.getString("LastScore")));
+							result.getString("LastScore"), result.getString("RegisterClass")));
 				}
 
 				result.close();
@@ -604,7 +619,7 @@ public class MySqlDbImports {
 			}
 		}
 	}
-	
+
 	private void updateStudentLastVisit(StudentModel student, AttendanceEventModel importEvent) {
 		if (importEvent.getServiceCategory().equals("class java")) {
 			String eventName = importEvent.getEventName();
@@ -637,7 +652,7 @@ public class MySqlDbImports {
 			}
 		}
 	}
-	
+
 	private StudentModel getStudentCurrentLevel(int clientID) {
 		for (int i = 0; i < 2; i++) {
 			try {
@@ -1176,7 +1191,7 @@ public class MySqlDbImports {
 		}
 		return 0;
 	}
-	
+
 	private void deleteFromAttendance(int clientID, int visitID, StudentNameModel studentModel) {
 		PreparedStatement deleteAttendanceStmt;
 		for (int i = 0; i < 2; i++) {
@@ -1203,7 +1218,7 @@ public class MySqlDbImports {
 			}
 		}
 	}
-	
+
 	public void updateAttendLevelChanges(int visitID, String state) {
 		for (int i = 0; i < 2; i++) {
 			try {
@@ -1342,7 +1357,7 @@ public class MySqlDbImports {
 
 	private void updateGraduationRecord(GraduationModel gradModel) {
 		// Graduation records are uniquely identified by clientID & level pair.
-		// Update only EndDate, Score, SkipLevel, Promoted. Set 'in SF' false to forces update.
+		// Update only EndDate, Score, SkipLevel, Promoted. Set 'in SF' false to force update.
 		for (int i = 0; i < 2; i++) {
 			try {
 				// Update graduation record in database
@@ -1390,7 +1405,7 @@ public class MySqlDbImports {
 			}
 		}
 	}
-	
+
 	public void removeProcessedGraduations() {
 		for (int i = 0; i < 2; i++) {
 			try {
@@ -1957,7 +1972,7 @@ public class MySqlDbImports {
 			}
 		}
 	}
-	
+
 	/*
 	 * ------- Miscellaneous utilities -------
 	 */
