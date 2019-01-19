@@ -1250,6 +1250,36 @@ public class MySqlDbImports {
 	/*
 	 * ------- Graduation Import Database Queries -------
 	 */
+	public void updateGradInSfField(int clientID, String studentName, String gradLevel, boolean newValue) {
+		// Graduation records are uniquely identified by clientID & level pair.
+		for (int i = 0; i < 2; i++) {
+			try {
+				// If Database no longer connected, the exception code will re-connect
+				PreparedStatement updateGraduateStmt = sqlDb.dbConnection.prepareStatement(
+						"UPDATE Graduation SET InSalesForce=? WHERE ClientID=? AND GradLevel=?;");
+
+				updateGraduateStmt.setInt(1, newValue ? 1 : 0);
+				updateGraduateStmt.setInt(2, clientID);
+				updateGraduateStmt.setInt(3, Integer.parseInt(gradLevel));
+
+				updateGraduateStmt.executeUpdate();
+				updateGraduateStmt.close();
+				break;
+
+			} catch (CommunicationsException | MySQLNonTransientConnectionException | NullPointerException e1) {
+				if (i == 0) {
+					// First attempt to re-connect
+					sqlDb.connectDatabase();
+				}
+
+			} catch (SQLException e2) {
+				MySqlDbLogging.insertLogData(LogDataModel.STUDENT_DB_ERROR,
+						new StudentNameModel(studentName, "", false), clientID, " for Graduation: " + e2.getMessage());
+				break;
+			}
+		}
+	}
+
 	private void graduateStudent(StudentImportModel importStudent, StudentImportModel dbStudent) {
 		// Add record to Graduation table if current level has increased
 		if (!dbStudent.getCurrLevel().equals("")
@@ -1269,8 +1299,7 @@ public class MySqlDbImports {
 
 			if (importStudent.getCurrLevel().compareTo(dbStudent.getCurrLevel()) > 0
 					&& importStudent.getLastExamScore().startsWith("L" + dbStudent.getCurrLevel() + " ")) {
-				// New graduate: If score is just 'Ln ' or student promoted or skipped, then no
-				// score
+				// New graduate: If score is just 'Ln ' or student promoted or skipped, then no score
 				if (!isPromoted && !isSkip && importStudent.getLastExamScore().length() > 3)
 					score = importStudent.getLastExamScore().substring(3);
 
@@ -1293,8 +1322,18 @@ public class MySqlDbImports {
 			addGraduationRecord(new GraduationModel(dbStudent.getClientID(), dbStudent.getFullName(), dbCurrLevelNum,
 					score, dbStudent.getCurrClass(),
 					getStartDateByClientIdAndLevel(dbStudent.getClientID(), dbCurrLevelNum),
-					new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles")).toString("yyyy-MM-dd"), false,
+					new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles")).toString("yyyy-MM-dd"),
 					false, isSkip, isPromoted));
+			
+		} else if (dbStudent.getCurrLevel().equals("") && importStudent.getLastExamScore().toLowerCase().contains("skip")
+				&& importStudent.getLastExamScore().charAt(0) == 'L' && importStudent.getLastExamScore().charAt(2) == ' ') {
+			// Student's current level is blank but student skipped level(s)
+			int currLevel = Integer.parseInt(importStudent.getCurrLevel());
+			String today = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles")).toString("yyyy-MM-dd");
+			
+			for (int i = 0; i < currLevel; i++)
+				addGraduationRecord(new GraduationModel(dbStudent.getClientID(), dbStudent.getFullName(), i,
+						"", dbStudent.getCurrClass(), today, today, false, true, false));
 		}
 	}
 
@@ -1414,11 +1453,8 @@ public class MySqlDbImports {
 				ResultSet result = selectStmt.executeQuery();
 
 				while (result.next()) {
-					// When both flags are true, record can be removed
-					boolean inSf = result.getBoolean(MySqlDatabase.GRAD_MODEL_IN_SF_FIELD);
-					boolean processed = result.getBoolean(MySqlDatabase.GRAD_MODEL_PROCESSED_FIELD);
-
-					if (inSf && processed) {
+					// When "in salesforce" flag is true, record can be removed
+					if (result.getBoolean(MySqlDatabase.GRAD_MODEL_IN_SF_FIELD)) {
 						// Graduation record has been processed, so remove from DB
 						PreparedStatement deleteGradStmt = sqlDb.dbConnection
 								.prepareStatement("DELETE FROM Graduation WHERE ClientID=? AND GradLevel=?;");
