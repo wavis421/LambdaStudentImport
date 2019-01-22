@@ -23,7 +23,6 @@ public class SalesForceImport {
 	// Import -30 to +45 days
 	private static final int DATE_RANGE_PAST_IN_DAYS = 21;
 	private static final int DATE_RANGE_FUTURE_IN_DAYS = 45;
-	private static final int DATE_RANGE_ENROLL_STATS_DAYS = 20;
 
 	MySqlDatabase sqlDb;
 	String startDate, endDate;
@@ -74,7 +73,7 @@ public class SalesForceImport {
 		// Perform the update to SalesForce
 		SalesForceImportEngine importer = new SalesForceImportEngine(sqlDb, pike13Api, salesForceApi);
 		LocationLookup.setLocationData(sqlDb.getLocationList());
-		importer.updateSalesForce(today, startDate, endDate, DATE_RANGE_ENROLL_STATS_DAYS);
+		importer.updateSalesForce(today, startDate, endDate);
 
 		// Clean up and exit
 		lambdaFunctionEnd(-1, null); // -1 indicates no error
