@@ -8,13 +8,11 @@ import org.joda.time.DateTimeZone;
 
 import model.AttendanceEventModel;
 import model.CoursesModel;
-import model.LogDataModel;
 import model.MySqlDbImports;
 import model.MySqlDbLogging;
 import model.ScheduleModel;
 import model.StudentImportModel;
 import model.StudentModel;
-import model.StudentNameModel;
 
 public class StudentImportEngine {
 	static final int SCHEDULE_DAYS_IN_PAST = 14;
@@ -124,13 +122,13 @@ public class StudentImportEngine {
 				// Update for each student in this class
 				if (className.equals(stud.getCurrentClass()) || className.equals(stud.getRegisterClass())) {
 					attCount++; // Update attendance for this class
-					
+
 					// Increment count for current level
 					int level = 0;
 					if (!stud.getCurrentLevel().equals(""))
 						level = Integer.parseInt(stud.getCurrentLevel());
 					levelCnt[level]++;
-					
+
 					// Update min, max age
 					if (stud.getAge() > 0) {
 						ageCount++;
@@ -140,15 +138,15 @@ public class StudentImportEngine {
 						if (stud.getAge() > ageMax)
 							ageMax = stud.getAge();
 					}
-					
+
 					// Update count per level & module
 					if (stud.getCurrentModule() != null && !stud.getCurrentModule().equals("")
 							&& stud.getCurrentModule().charAt(0) >= '0' && stud.getCurrentModule().charAt(0) <= '9')
 						moduleCnt[level][stud.getCurrentModule().charAt(0) - '0']++;
 				}
 			}
-			
-			// If any students in this scheduled class, update the level field for this class
+
+			// If any students in this scheduled class, update the class level field
 			if (attCount > 0) {
 				String levelString = "";
 				for (int i = 0; i < levelCnt.length; i++) { // Loop thru each level
@@ -170,12 +168,12 @@ public class StudentImportEngine {
 						levelString += levelCnt[i] + "@L" + i + moduleString;
 					}
 				}
-				
+
 				// Update schedule with attendance and level info
 				if (ageCount > 0) {
 					ageAvg = ageTot / ageCount;
-					sched.setMiscSchedFields(attCount, ageMin.toString().substring(0, 4), ageMax.toString().substring(0, 4),
-							ageAvg.toString().substring(0, 4), levelString);
+					sched.setMiscSchedFields(attCount, ageMin.toString().substring(0, 4),
+							ageMax.toString().substring(0, 4), ageAvg.toString().substring(0, 4), levelString);
 				} else
 					sched.setMiscSchedFields(attCount, "", "", "", levelString);
 			} else {
@@ -200,37 +198,29 @@ public class StudentImportEngine {
 	}
 
 	public void importGithubComments(String startDate, GithubApi githubApi) {
-		boolean result;
-
 		// Update github comments for users with new user name
 		githubApi.updateMissingGithubComments();
 
 		// Get list of events with missing comments
 		ArrayList<AttendanceEventModel> eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, false);
+
 		if (eventList.size() > 0) {
-			// Import Github comments
-			result = githubApi.importGithubComments(startDate, eventList);
+			// Import github comments for level 0 - 5, plus Intro to Java (-1)
+			githubApi.importGithubCommentsByLevel(-1, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(0, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(1, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(2, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(3, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(4, startDate, null, eventList);
+			githubApi.importGithubCommentsByLevel(5, startDate, null, eventList);
 
-			if (result) {
-				// Import github comments for level 0 - 5, plus Intro to Java (-1)
-				githubApi.importGithubCommentsByLevel(-1, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(0, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(1, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(2, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(3, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(4, startDate, null, eventList);
-				githubApi.importGithubCommentsByLevel(5, startDate, null, eventList);
+			// Import Github comments that are not in git classroom
+			githubApi.importGithubComments(startDate, eventList);
 
-				// Update any remaining null comments to show event was processed
-				githubApi.updateEmptyGithubComments(eventList);
+			// Update any remaining null comments to show event was processed
+			githubApi.updateEmptyGithubComments(eventList);
 
-				System.out.println(eventList.size() + " github records imported");
-
-			} else {
-				MySqlDbLogging.insertLogData(LogDataModel.GITHUB_IMPORT_ABORTED, new StudentNameModel("", "", false), 0,
-						": Github API rate limit exceeded ***");
-				return;
-			}
+			System.out.println(eventList.size() + " github records imported");
 		}
 	}
 }

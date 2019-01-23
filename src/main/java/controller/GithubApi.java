@@ -22,9 +22,20 @@ import model.StudentModel;
 import model.StudentNameModel;
 
 public class GithubApi {
+	private static final int NEW_GITUSER_UPDATE_WINDOW = 2; // Months
+
 	private MySqlDbImports sqlDbImports;
 	private RepositoryService repoService;
 	private CommitService commitService;
+
+	// Repo lists for workshop and levels 0 - 5
+	private List<Repository> repoListLevelIntro;
+	private List<Repository> repoListLevel0;
+	private List<Repository> repoListLevel1;
+	private List<Repository> repoListLevel2;
+	private List<Repository> repoListLevel3;
+	private List<Repository> repoListLevel4;
+	private List<Repository> repoListLevel5;
 
 	public GithubApi(MySqlDbImports sqlDbImports, String githubToken) {
 		this.sqlDbImports = sqlDbImports;
@@ -46,6 +57,10 @@ public class GithubApi {
 		for (int i = 0; i < eventList.size(); i++) {
 			// Get commit info from DB for each student/date combo
 			AttendanceEventModel event = eventList.get(i);
+			if (event.getGithubComments() != null && !event.getGithubComments().trim().equals(""))
+				// Skip non-empty comments
+				continue;
+			
 			String gitUser = event.getGithubName().toLowerCase();
 
 			try {
@@ -66,8 +81,8 @@ public class GithubApi {
 			} catch (IOException e) {
 				if (e.getMessage().startsWith("API rate limit exceeded")) {
 					// Rate limit exceeded, so abort
-					MySqlDbLogging.insertLogData(LogDataModel.GITHUB_IMPORT_ABORTED, new StudentNameModel("", "", false), 0,
-							": Github API rate limit exceeded ***");
+					MySqlDbLogging.insertLogData(LogDataModel.GITHUB_IMPORT_ABORTED,
+							new StudentNameModel("", "", false), 0, ": Github API rate limit exceeded ***");
 					return false;
 
 				} else {
@@ -125,24 +140,25 @@ public class GithubApi {
 	public void updateMissingGithubComments() {
 		// Import github comments from start date for new github user names
 		ArrayList<StudentModel> newGithubList = sqlDbImports.getStudentsUsingFlag("NewGithub");
+
 		if (newGithubList.size() == 0)
 			return;
 
 		// Create repo lists for each level
-		List<Repository> repoListLevelIntro = getRepoListByLevel(-1);
-		List<Repository> repoListLevel0 = getRepoListByLevel(0);
-		List<Repository> repoListLevel1 = getRepoListByLevel(1);
-		List<Repository> repoListLevel2 = getRepoListByLevel(2);
-		List<Repository> repoListLevel3 = getRepoListByLevel(3);
-		List<Repository> repoListLevel4 = getRepoListByLevel(4);
-		List<Repository> repoListLevel5 = getRepoListByLevel(5);
-		String earliestDate = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles")).minusMonths(4)
-				.toString("yyyy-MM-dd");
+		repoListLevelIntro = getRepoListByLevel(-1);
+		repoListLevel0 = getRepoListByLevel(0);
+		repoListLevel1 = getRepoListByLevel(1);
+		repoListLevel2 = getRepoListByLevel(2);
+		repoListLevel3 = getRepoListByLevel(3);
+		repoListLevel4 = getRepoListByLevel(4);
+		repoListLevel5 = getRepoListByLevel(5);
+		String earliestDate = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"))
+				.minusMonths(NEW_GITUSER_UPDATE_WINDOW).toString("yyyy-MM-dd");
 
 		for (int i = 0; i < newGithubList.size(); i++) {
 			StudentModel student = newGithubList.get(i);
 			if (student.getStartDate() != null) {
-				// Catch up only as far back as 4 months ago
+				// Catch up only as far back as 2 months ago
 				String catchupStartDate = student.getStartDate().toString();
 				if (catchupStartDate.compareTo(earliestDate) < 0)
 					catchupStartDate = earliestDate;
@@ -150,7 +166,6 @@ public class GithubApi {
 				// Import missing github comments
 				ArrayList<AttendanceEventModel> eventList = sqlDbImports.getEventsWithNoComments(catchupStartDate,
 						student.getClientID(), true);
-				importGithubComments(catchupStartDate, eventList);
 				importGithubCommentsByLevel(-1, catchupStartDate, repoListLevelIntro, eventList);
 				importGithubCommentsByLevel(0, catchupStartDate, repoListLevel0, eventList);
 				importGithubCommentsByLevel(1, catchupStartDate, repoListLevel1, eventList);
@@ -158,6 +173,7 @@ public class GithubApi {
 				importGithubCommentsByLevel(3, catchupStartDate, repoListLevel3, eventList);
 				importGithubCommentsByLevel(4, catchupStartDate, repoListLevel4, eventList);
 				importGithubCommentsByLevel(5, catchupStartDate, repoListLevel5, eventList);
+				importGithubComments(catchupStartDate, eventList);
 
 				// Set student 'new github' flag back to false
 				sqlDbImports.updateStudentFlags(student, "NewGithub", 0);
@@ -172,8 +188,8 @@ public class GithubApi {
 			// Update events with null github comments to avoid repeated searches
 			AttendanceEventModel event = eventList.get(i);
 			if (event.getGithubComments().equals("") && event.getServiceDateString().compareTo(today) < 0) {
-				sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(), event.getServiceDateString(),
-						event.getEventName(), null, "");
+				sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(),
+						event.getServiceDateString(), event.getEventName(), null, "");
 			}
 		}
 	}
@@ -182,27 +198,64 @@ public class GithubApi {
 		// League levels use Github classroom with user 'League-Level0-Student'
 		// Intro to Java Workshop uses Github classroom with user 'League-Workshop'
 		String ownerName;
-		if (level == -1)
+		List<Repository> repoList;
+
+		if (level == -1) {
 			ownerName = "League-Workshop";
-		else
+			repoList = getRepoList(-1, ownerName);
+		} else {
 			ownerName = "League-Level" + level + "-Student";
-		List<Repository> repoList = null;
+			repoList = getRepoList(level, ownerName);
+		}
 
+		if (repoList.size() == 0)
+			return null;
+
+		return repoList;
+	}
+
+	private List<Repository> getRepoList(int level, String ownerName) {
 		try {
-			repoList = repoService.getRepositories(ownerName);
-			if (repoList.size() == 0)
-				return null;
+			switch (level) {
+			case -1:
+				if (repoListLevelIntro == null)
+					repoListLevelIntro = repoService.getRepositories(ownerName);
+				return repoListLevelIntro;
+			case 0:
+				if (repoListLevel0 == null)
+					repoListLevel0 = repoService.getRepositories(ownerName);
+				return repoListLevel0;
+			case 1:
+				if (repoListLevel1 == null)
+					repoListLevel1 = repoService.getRepositories(ownerName);
+				return repoListLevel1;
+			case 2:
+				if (repoListLevel2 == null)
+					repoListLevel2 = repoService.getRepositories(ownerName);
+				return repoListLevel2;
+			case 3:
+				if (repoListLevel3 == null)
+					repoListLevel3 = repoService.getRepositories(ownerName);
+				return repoListLevel3;
+			case 4:
+				if (repoListLevel4 == null)
+					repoListLevel4 = repoService.getRepositories(ownerName);
+				return repoListLevel4;
+			case 5:
+				if (repoListLevel5 == null)
+					repoListLevel5 = repoService.getRepositories(ownerName);
+				return repoListLevel5;
+			}
 
-		} catch (IOException e1) {
-			if (e1.getMessage().startsWith("API rate limit exceeded"))
+		} catch (IOException e) {
+			if (e.getMessage().startsWith("API rate limit exceeded"))
 				MySqlDbLogging.insertLogData(LogDataModel.GITHUB_IMPORT_ABORTED, new StudentNameModel("", "", false), 0,
 						": Github API rate limit exceeded ***");
 			else
 				MySqlDbLogging.insertLogData(LogDataModel.GITHUB_MODULE_REPO_ERROR, null, 0,
-						" for " + ownerName + ": " + e1.getMessage());
+						" for " + ownerName + ": " + e.getMessage());
 		}
-
-		return repoList;
+		return null;
 	}
 
 	private void updateUserGithubComments(String githubUser, String startDate, List<AttendanceEventModel> eventList,
@@ -232,8 +285,11 @@ public class GithubApi {
 							// Update comments & repo name, continue to next commit
 							if (!message.equals("")) {
 								event.setGithubComments(message);
-								sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(), commitDate,
-										event.getEventName(), repo.getName(), event.getGithubComments());
+								sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(),
+										commitDate, event.getEventName(), repo.getName(), event.getGithubComments());
+								System.out.println(
+										"  " + event.getGithubName() + " '" + repo.getName() + "' on " + commitDate
+												+ " for " + event.getEventName() + ": " + event.getGithubComments());
 							}
 						}
 					}
