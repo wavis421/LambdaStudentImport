@@ -648,7 +648,7 @@ public class MySqlDbImports {
 				// Class mismatch
 				MySqlDbLogging.insertLogData(LogDataModel.CLASS_LEVEL_MISMATCH, student.getNameModel(),
 						importEvent.getClientID(), " for " + eventName + " on " + importEvent.getServiceDateString()
-								+ ", DB Level = " + student.getCurrentLevel());
+								+ ", Pike13 Level = " + student.getCurrentLevel());
 			}
 		}
 	}
