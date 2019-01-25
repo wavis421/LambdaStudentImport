@@ -10,6 +10,7 @@ import model.AttendanceEventModel;
 import model.CoursesModel;
 import model.MySqlDbImports;
 import model.MySqlDbLogging;
+import model.PendingGithubModel;
 import model.ScheduleModel;
 import model.StudentImportModel;
 import model.StudentModel;
@@ -198,29 +199,26 @@ public class StudentImportEngine {
 	}
 
 	public void importGithubComments(String startDate, GithubApi githubApi) {
-		// Update github comments for users with new user name
-		githubApi.updateMissingGithubComments();
+		// Update github comments from "pending github" table.
+		// This table is populated each time a student commits to a league github classroom.
+		ArrayList<PendingGithubModel> githubList = sqlImportDb.getPendingGithubEvents();
+		ArrayList<AttendanceEventModel> eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, true);
+		
+		int origGithubListSize = githubList.size();
+		if (eventList.size() > 0)
+			sqlImportDb.updatePendingGithubComments(githubList, startDate, eventList);
 
 		// Get list of events with missing comments
-		ArrayList<AttendanceEventModel> eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, false);
+		eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, false);
 
 		if (eventList.size() > 0) {
-			// Import github comments for level 0 - 5, plus Intro to Java (-1)
-			githubApi.importGithubCommentsByLevel(-1, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(0, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(1, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(2, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(3, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(4, startDate, null, eventList);
-			githubApi.importGithubCommentsByLevel(5, startDate, null, eventList);
-
 			// Import Github comments that are not in git classroom
 			githubApi.importGithubComments(startDate, eventList);
 
 			// Update any remaining null comments to show event was processed
 			githubApi.updateEmptyGithubComments(eventList);
 
-			System.out.println(eventList.size() + " github records imported");
+			System.out.println((eventList.size() + (origGithubListSize - githubList.size())) + " github records processed");
 		}
 	}
 }
