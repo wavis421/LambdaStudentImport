@@ -229,7 +229,7 @@ public class Pike13DbImport {
 							pike13Conn.stripQuotes(personArray.get(GENDER_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(FIRST_VISIT_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(HOME_LOC_IDX).toString()),
-							pike13Conn.stripQuotes(personArray.get(GRAD_YEAR_IDX).toString()),
+							pike13Conn.stripQuotes(personArray.get(GRAD_YEAR_IDX).toString().trim()),
 							pike13Conn.stripQuotes(personArray.get(EMAIL_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(ACCT_MGR_EMAIL_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(EMERG_EMAIL_IDX).toString()),
