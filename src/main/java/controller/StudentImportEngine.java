@@ -66,6 +66,13 @@ public class StudentImportEngine {
 				System.out.println(eventList.size() + " new student attendance records imported from Pike13");
 			}
 		}
+
+		// Delete 'registered' attendance that has expired
+		eventList = sqlImportDb.getExpiredEvents(startDate);
+		if (eventList.size() > 0) {
+			sqlImportDb.deleteExpiredAttendance(eventList);
+			System.out.println(eventList.size() + " expired attendance records removed");
+		}
 	}
 
 	public void importCourseAttendanceFromPike13(String startDate, String endDate, Pike13DbImport pike13Api) {
@@ -203,7 +210,7 @@ public class StudentImportEngine {
 		// This table is populated each time a student commits to a league github classroom.
 		ArrayList<PendingGithubModel> githubList = sqlImportDb.getPendingGithubEvents();
 		ArrayList<AttendanceEventModel> eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, true);
-		
+
 		int origGithubListSize = githubList.size();
 		if (eventList.size() > 0)
 			sqlImportDb.updatePendingGithubComments(githubList, startDate, eventList);
