@@ -90,7 +90,7 @@ public class GithubApi {
 			AttendanceEventModel event = eventList.get(i);
 			if (event.getGithubComments().equals("") && event.getServiceDateString().compareTo(today) < 0) {
 				sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(),
-						event.getServiceDateString(), event.getEventName(), null, "");
+						event.getServiceDateString(), event.getEventName(), null, "", "");
 			}
 		}
 	}
@@ -116,14 +116,13 @@ public class GithubApi {
 						AttendanceEventModel event = eventList.get(k);
 						if (commitDate.equals(event.getServiceDateString())
 								&& githubUser.equals(event.getGithubName().toLowerCase())) {
-							// Trim github message to get only summary data
-							String message = trimMessage(commit.getCommit().getMessage());
-
 							// Update comments & repo name, continue to next commit
+							String message = commit.getCommit().getMessage();
 							if (!message.equals("")) {
 								event.setGithubComments(message);
 								sqlDbImports.updateAttendance(event.getClientID(), event.getStudentNameModel(),
-										commitDate, event.getEventName(), repo.getName(), event.getGithubComments());
+										commitDate, event.getEventName(), repo.getName(), event.getGithubComments(),
+										event.getGitDescription());
 							}
 						}
 					}
@@ -133,15 +132,5 @@ public class GithubApi {
 		} catch (NoSuchPageException e) {
 			// Repo is empty, so just return
 		}
-	}
-
-	private String trimMessage(String inputMsg) {
-		// Trim message up to first new-line character
-		inputMsg = inputMsg.trim();
-		int idx = inputMsg.indexOf("\n");
-		if (idx > -1)
-			return inputMsg.substring(0, idx);
-		else
-			return inputMsg;
 	}
 }
