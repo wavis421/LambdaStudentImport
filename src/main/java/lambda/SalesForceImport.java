@@ -61,13 +61,19 @@ public class SalesForceImport {
 		config.setPassword(System.getenv("SALESFORCE_KEY"));
 		config.setTraceMessage(false);
 
-		try {
-			salesForceApi = Connector.newConnection(config);
+		for (int i = 0; i < 2; i++) { // Try twice
+			try {
+				salesForceApi = Connector.newConnection(config);
+				break;
 
-		} catch (ConnectionException e1) {
-			lambdaFunctionEnd(LogDataModel.SALES_FORCE_CONNECTION_ERROR, e1.getMessage());
-			return ("Start: " + today + ", End: " + (new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"))
-					.toString("yyyy-MM-dd HH:mm:ss")));
+			} catch (ConnectionException e1) {
+				e1.printStackTrace();
+				if (i > 0) {
+					lambdaFunctionEnd(LogDataModel.SALES_FORCE_CONNECTION_ERROR, e1.getMessage());
+					return ("Start: " + today + ", End: " + (new DateTime()
+							.withZone(DateTimeZone.forID("America/Los_Angeles")).toString("yyyy-MM-dd HH:mm:ss")));
+				}
+			}
 		}
 
 		// Perform the update to SalesForce
