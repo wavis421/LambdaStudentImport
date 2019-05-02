@@ -55,7 +55,7 @@ public class SalesForceImport {
 		Pike13SalesforceImport pike13Api = new Pike13SalesforceImport(pike13Conn);
 
 		// Connect to SalesForce
-		EnterpriseConnection salesForceApi;
+		EnterpriseConnection salesForceApi = null;
 		ConnectorConfig config = new ConnectorConfig();
 		config.setUsername(System.getenv("SALESFORCE_USER"));
 		config.setPassword(System.getenv("SALESFORCE_KEY"));
