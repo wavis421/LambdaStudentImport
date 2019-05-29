@@ -220,7 +220,7 @@ public class Pike13DbImport {
 				if (personArray.get(BIRTHDATE_IDX) != null)
 					birthday = pike13Conn.stripQuotes(personArray.get(BIRTHDATE_IDX).toString());
 
-				if (!firstName.startsWith("Guest") && !firstName.equals("Test")) {
+				if (!firstName.startsWith("Guest") && !firstName.equals("Test") && !firstName.startsWith("TestChild")) {
 					// Get fields for this Json array entry
 					StudentImportModel model = new StudentImportModel(personArray.getInt(CLIENT_ID_IDX),
 							pike13Conn.stripQuotes(personArray.get(LAST_NAME_IDX).toString()),
