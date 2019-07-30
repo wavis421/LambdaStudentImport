@@ -95,18 +95,20 @@ public class StudentImportEngine {
 		ArrayList<ScheduleModel> scheduleList = pike13Api.getSchedule(startDate);
 		ArrayList<ScheduleModel> filteredList = new ArrayList<ScheduleModel>();
 
-		// Pike13 will have duplicate Schedule ID's, so filter them out
-		ScheduleModel lastUpdate = null;
-		for (ScheduleModel item : scheduleList) {
-			if (lastUpdate != null && item.compareTo(lastUpdate) == 0)
-				continue;
-
-			filteredList.add(item);
-			lastUpdate = item;
+		// Pike13 will have duplicate Schedule ID's, so filter them out.
+		// Grab the latest one, which will be the most up-to-date.
+		if (scheduleList.size() > 0) {
+			ScheduleModel lastUpdate = scheduleList.get(0);
+			for (ScheduleModel item : scheduleList) {
+				if (item.compareTo(lastUpdate) != 0)
+					filteredList.add(lastUpdate);
+				lastUpdate = item;
+			}
+			filteredList.add(lastUpdate);
 		}
 
 		// Update student age fields and count
-		updateScheduleData(filteredList);
+		updateScheduleData(filteredList, pike13Api);
 
 		// Update changes in database
 		if (filteredList.size() > 0) {
@@ -115,20 +117,24 @@ public class StudentImportEngine {
 		}
 	}
 
-	private void updateScheduleData(ArrayList<ScheduleModel> schedule) {
+	private void updateScheduleData(ArrayList<ScheduleModel> schedule, Pike13DbImport pike13Api) {
 		// Update the age fields and the attendance count for each class in schedule
 		ArrayList<StudentModel> students = sqlImportDb.getActiveStudents();
 
 		for (ScheduleModel sched : schedule) {
-			String className = sched.getClassName();
+			String className = sched.getClassName().trim();
 			int attCount = 0, ageCount = 0;
 			Double ageMin = 0.0, ageMax = 0.0, ageAvg = 0.0, ageTot = 0.0;
 			int[][] moduleCnt = new int[8][10]; // Curr count by levels 0-7, for modules 0-9
 			int[] levelCnt = new int[8]; // Student count by level for this class
 
 			for (StudentModel stud : students) {
+				// Only process students who are in levels 0 through 7
+				if (!stud.getCurrentLevel().equals("") && stud.getCurrentLevel().charAt(0) > '7')
+					continue;
+
 				// Update for each student in this class
-				if (className.equals(stud.getCurrentClass()) || className.equals(stud.getRegisterClass())) {
+				if (className.equals(stud.getCurrentClass().trim()) || className.equals(stud.getRegisterClass().trim())) {
 					attCount++; // Update attendance for this class
 
 					// Increment count for current level
@@ -176,18 +182,50 @@ public class StudentImportEngine {
 						levelString += levelCnt[i] + "@L" + i + moduleString;
 					}
 				}
+				
+				// Update room field
+				String room = getRoomFromScheduleID(sched.getScheduleID(), pike13Api);
+				boolean roomMismatch = checkRoomMismatch(className, room, levelString);
 
 				// Update schedule with attendance and level info
 				if (ageCount > 0) {
 					ageAvg = ageTot / ageCount;
 					sched.setMiscSchedFields(attCount, ageMin.toString().substring(0, 4),
-							ageMax.toString().substring(0, 4), ageAvg.toString().substring(0, 4), levelString);
+							ageMax.toString().substring(0, 4), ageAvg.toString().substring(0, 4), levelString, 
+							room, roomMismatch);
 				} else
-					sched.setMiscSchedFields(attCount, "", "", "", levelString);
+					sched.setMiscSchedFields(attCount, "", "", "", levelString, room, roomMismatch);
+				
 			} else {
-				sched.setMiscSchedFields(0, "", "", "", "");
+				sched.setMiscSchedFields(0, "", "", "", "", "", false);
 			}
 		}
+	}
+
+	private String getRoomFromScheduleID (int scheduleID, Pike13DbImport pike13Api) {
+		String roomName = pike13Api.getRoomField(scheduleID);
+		
+		// Now sort/filter the room names
+		String sortedRoomName = "";
+		for (int i = 0; i <= 7; i++) {
+			if (roomName.contains("Level " + i)) {
+				if (!sortedRoomName.equals(""))
+					sortedRoomName += ",";
+				sortedRoomName += i;
+			}
+		}
+		return sortedRoomName;
+	}
+	
+	private boolean checkRoomMismatch (String className, String room, String levelString) {
+		if (!className.contains("Java@CV"))
+			return false;
+		
+		for (Integer i = 0; i <= 7; i++) {
+			if (levelString.contains("L" + i) && !room.contains(i.toString()))
+				return true;
+		}
+		return false;
 	}
 
 	public void importCoursesFromPike13(Pike13DbImport pike13Api) {

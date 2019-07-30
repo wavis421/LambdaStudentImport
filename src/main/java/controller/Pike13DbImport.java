@@ -69,6 +69,7 @@ public class Pike13DbImport {
 	private final int SCHED_SERVICE_TIME_IDX = 1;
 	private final int SCHED_DURATION_MINS_IDX = 2;
 	private final int SCHED_WKLY_EVENT_NAME_IDX = 3;
+	private final int SCHED_ID_IDX = 4;
 
 	// Indices for courses data
 	private final int COURSES_SCHEDULE_ID_IDX = 0;
@@ -138,7 +139,7 @@ public class Pike13DbImport {
 			// Get attributes: fields, page limit and filters
 			+ "\"attributes\":{"
 			// Select fields
-			+ "\"fields\":[\"service_day\",\"service_time\",\"duration_in_minutes\",\"event_name\"],"
+			+ "\"fields\":[\"service_day\",\"service_time\",\"duration_in_minutes\",\"event_name\",\"event_occurrence_id\"],"
 			// Page limit max is 500
 			+ "\"page\":{\"limit\":500},"
 			// Filter on 'this week' and 'starts with Class' and event name not null
@@ -196,9 +197,9 @@ public class Pike13DbImport {
 
 			// Send the query
 			if (hasMore)
-				conn = pike13Conn.sendQueryToUrl("clients", getClientData + ",\"starting_after\":\"" + lastKey + "\"" + clients2);
+				conn = pike13Conn.sendQueryToUrl("clients", getClientData + ",\"starting_after\":\"" + lastKey + "\"" + clients2, false);
 			else
-				conn = pike13Conn.sendQueryToUrl("clients", getClientData + clients2);
+				conn = pike13Conn.sendQueryToUrl("clients", getClientData + clients2, false);
 
 			if (conn == null)
 				return studentList;
@@ -277,9 +278,9 @@ public class Pike13DbImport {
 			// Get URL connection with authorization and send the query; add page info if necessary
 			HttpURLConnection conn;
 			if (hasMore)
-				conn = pike13Conn.sendQueryToUrl("enrollments", cmdString1 + ",\"starting_after\":\"" + lastKey + "\"" + cmdString2);
+				conn = pike13Conn.sendQueryToUrl("enrollments", cmdString1 + ",\"starting_after\":\"" + lastKey + "\"" + cmdString2, false);
 			else
-				conn = pike13Conn.sendQueryToUrl("enrollments", cmdString1 + cmdString2);
+				conn = pike13Conn.sendQueryToUrl("enrollments", cmdString1 + cmdString2, false);
 
 			if (conn == null)
 				return eventList;
@@ -364,7 +365,7 @@ public class Pike13DbImport {
 				new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles")).plusDays(6).toString("yyyy-MM-dd"));
 
 		// Get URL connection with authorization and send query
-		HttpURLConnection conn = pike13Conn.sendQueryToUrl("event_occurrences", scheduleString);
+		HttpURLConnection conn = pike13Conn.sendQueryToUrl("event_occurrences", scheduleString, false);
 		if (conn == null)
 			return scheduleList;
 
@@ -388,11 +389,50 @@ public class Pike13DbImport {
 			int duration = scheduleArray.getInt(SCHED_DURATION_MINS_IDX);
 
 			// Add event to list
-			scheduleList.add(new ScheduleModel(0, serviceDay, startTime, duration, eventName));
+			scheduleList.add(new ScheduleModel(scheduleArray.getInt(SCHED_ID_IDX), serviceDay, startTime, duration, eventName));
 		}
 
 		conn.disconnect();
 		return scheduleList;
+	}
+
+	public String getRoomField(int scheduleId) {
+		// Get URL connection with authorization and send query
+		HttpURLConnection conn = pike13Conn.sendQueryToUrl("event_occurrences?ids=" + scheduleId, "", true);
+		if (conn == null)
+			return "";
+
+		// Get input stream and read data
+		JsonObject jsonObj = pike13Conn.readCoreInputStream(conn);
+		if (jsonObj == null) {
+			conn.disconnect();
+			return "";
+		}
+
+		// Get all scheduled events using Pike13 CORE API
+		JsonArray jsonArray = jsonObj.getJsonArray("event_occurrences");
+		if (jsonArray != null) {
+			// Get fields for this event in the schedule
+			JsonObject event = jsonArray.getJsonObject(0);
+			JsonArray resources = event.getJsonArray("resources");
+			String eventName = event.get("name").toString();
+
+			/* Get fields for each scheduled event */
+			if (resources.size() > 0 && eventName.contains("Java@CV")) {
+				// Process resources field by extracting the ROOM field
+				String roomName = "";
+				for (int i = 0; i < resources.size(); i++) {
+					JsonObject res = resources.getJsonObject(i);
+					if (!roomName.equals(""))
+						roomName += ", ";
+					roomName += res.getString("name");
+				}
+				return roomName;
+			}
+		}
+
+		conn.disconnect();
+		return "";
 	}
 
 	public ArrayList<CoursesModel> getCourses(String startDate, String endDate) {
@@ -403,7 +443,7 @@ public class Pike13DbImport {
 		coursesString = coursesString.replaceFirst("1111-11-11", endDate);
 
 		// Get URL connection with authorization and send query
-		HttpURLConnection conn = pike13Conn.sendQueryToUrl("event_occurrences", coursesString);
+		HttpURLConnection conn = pike13Conn.sendQueryToUrl("event_occurrences", coursesString, false);
 		if (conn == null)
 			return coursesList;
 
@@ -440,7 +480,7 @@ public class Pike13DbImport {
 
 	public void updateStudentTAData(ArrayList<StudentImportModel> students) {
 		// Get URL connection and send the query
-		HttpURLConnection conn = pike13Conn.sendQueryToUrl("staff_members", getStudentTAData);
+		HttpURLConnection conn = pike13Conn.sendQueryToUrl("staff_members", getStudentTAData, false);
 		if (conn == null)
 			return;
 
