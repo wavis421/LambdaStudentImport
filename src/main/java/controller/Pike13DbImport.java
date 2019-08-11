@@ -411,7 +411,7 @@ public class Pike13DbImport {
 
 		// Get all scheduled events using Pike13 CORE API
 		JsonArray jsonArray = jsonObj.getJsonArray("event_occurrences");
-		if (jsonArray != null) {
+		if (jsonArray != null && jsonArray.size() > 0) {
 			// Get fields for this event in the schedule
 			JsonObject event = jsonArray.getJsonObject(0);
 			JsonArray resources = event.getJsonArray("resources");
