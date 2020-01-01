@@ -79,7 +79,7 @@ public class SalesForceImport {
 		// Perform the update to SalesForce
 		SalesForceImportEngine importer = new SalesForceImportEngine(sqlDb, pike13Api, salesForceApi);
 		LocationLookup.setLocationData(sqlDb.getLocationList());
-		importer.updateSalesForce(today, startDate, endDate);
+		importer.updateSalesForce(today.substring(0, 10), startDate, endDate);
 
 		// Clean up and exit
 		lambdaFunctionEnd(-1, null); // -1 indicates no error
