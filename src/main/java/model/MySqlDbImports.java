@@ -737,10 +737,14 @@ public class MySqlDbImports {
 					newModuleName="3";
 				} else if (currLevel.equals("2") && repoName.startsWith("league-level2-game-")) {
 					newModuleName="4";
-				} else if (repoName.startsWith("level" + currLevel + "-coding-exam-") || repoName.startsWith("level" + currLevel + "-codingexam-")) {
+				} else if (repoName.startsWith("level" + currLevel + "-exam") || repoName.startsWith("level" + currLevel + "-coding-exam") || repoName.startsWith("level" + currLevel + "-codingexam")) {
 					newModuleName = "E";
-				} else if (repoName.startsWith("level-" + currLevel + "-coding-exam-") || repoName.startsWith("level-" + currLevel + "-codingexam-")) {
+				} else if (repoName.startsWith("level-" + currLevel + "-coding-exam") || repoName.startsWith("level-" + currLevel + "-codingexam")) {
 					newModuleName = "E";
+				} else if (repoName.startsWith("level-" + currLevel + "-practice-coding-exam")) {
+					newModuleName="P";
+				} else if (repoName.startsWith("level" + currLevel + "-checkpoint")) {
+					idx = 17;
 				} else {
 					System.out.println(clientID + ": (unknown) " + repoName + " [" + currLevel + "][" + student.getCurrentModule() + "]");
 					return; // No matching level in repo name
