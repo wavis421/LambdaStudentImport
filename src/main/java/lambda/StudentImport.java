@@ -45,8 +45,8 @@ public class StudentImport {
 		sqlDb = new MySqlDatabase(System.getenv("PASSWORD"), MySqlDatabase.STUDENT_IMPORT_NO_SSH);
 		if (sqlDb.connectDatabase()) {
 			new MySqlDbLogging(sqlDb);
-			MySqlDbLogging.insertLogData(LogDataModel.STARTING_TRACKER_IMPORT, new StudentNameModel("", "", false), 0,
-					" for " + today.toString("yyyy-MM-dd") + " ***");
+			//MySqlDbLogging.insertLogData(LogDataModel.STARTING_TRACKER_IMPORT, new StudentNameModel("", "", false), 0,
+			//		" for " + today.toString("yyyy-MM-dd") + " ***");
 
 			MySqlDbImports sqlImportDb = new MySqlDbImports(sqlDb);
 			StudentImportEngine importer = new StudentImportEngine(sqlImportDb);

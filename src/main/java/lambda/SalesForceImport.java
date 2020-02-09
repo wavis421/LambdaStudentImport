@@ -47,8 +47,8 @@ public class SalesForceImport {
 		}
 
 		new MySqlDbLogging(sqlDb);
-		MySqlDbLogging.insertLogData(LogDataModel.STARTING_SALES_FORCE_IMPORT, new StudentNameModel("", "", false), 0,
-				" from " + startDate + " to " + endDate + " ***");
+		//MySqlDbLogging.insertLogData(LogDataModel.STARTING_SALES_FORCE_IMPORT, new StudentNameModel("", "", false), 0,
+		//		" from " + startDate + " to " + endDate + " ***");
 
 		// Connect to Pike13
 		Pike13Connect pike13Conn = new Pike13Connect(System.getenv("PIKE13_KEY"));
