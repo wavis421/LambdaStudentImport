@@ -19,6 +19,8 @@ public class StudentImportEngine {
 	static final int SCHEDULE_DAYS_IN_PAST = 14;
 	static final int COURSE_DAYS_IN_PAST = 14;
 	static final int COURSE_DAYS_IN_FUTURE = 120;
+	
+	private static final int MAX_CLASS_LEVEL = 8;  // Max level to process (Java classes go from 0-8, L9 is "electives")
 
 	MySqlDbImports sqlImportDb;
 
@@ -125,12 +127,12 @@ public class StudentImportEngine {
 			String className = sched.getClassName().trim();
 			int attCount = 0, ageCount = 0;
 			Double ageMin = 0.0, ageMax = 0.0, ageAvg = 0.0, ageTot = 0.0;
-			int[][] moduleCnt = new int[8][10]; // Curr count by levels 0-7, for modules 0-9
-			int[] levelCnt = new int[8]; // Student count by level for this class
+			int[][] moduleCnt = new int[MAX_CLASS_LEVEL + 1][10]; // Curr count by levels 0-8, for modules 0-9
+			int[] levelCnt = new int[MAX_CLASS_LEVEL + 1];        // Student count by level for this class
 
 			for (StudentModel stud : students) {
-				// Only process students who are in levels 0 through 7
-				if (!stud.getCurrentLevel().equals("") && stud.getCurrentLevel().charAt(0) > '7')
+				// Only process students who are in levels 0 through 8
+				if (!stud.getCurrentLevel().equals("") && stud.getCurrentLevel().charAt(0) > '8')
 					continue;
 
 				// Update for each student in this class
@@ -207,7 +209,7 @@ public class StudentImportEngine {
 		
 		// Now sort/filter the room names
 		String sortedRoomName = "";
-		for (int i = 0; i <= 7; i++) {
+		for (int i = 0; i <= MAX_CLASS_LEVEL; i++) {
 			if (roomName.contains("Level " + i)) {
 				if (!sortedRoomName.equals(""))
 					sortedRoomName += ",";
@@ -221,7 +223,7 @@ public class StudentImportEngine {
 		if (!className.contains("Java@CV"))
 			return false;
 		
-		for (Integer i = 0; i <= 7; i++) {
+		for (Integer i = 0; i <= MAX_CLASS_LEVEL; i++) {
 			if (levelString.contains("L" + i) && !room.contains(i.toString()))
 				return true;
 		}
