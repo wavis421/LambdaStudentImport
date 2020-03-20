@@ -37,7 +37,7 @@ public class GithubApi {
 		commitService = new CommitService(client);
 	}
 
-	public boolean importGithubComments(String startDate, ArrayList<AttendanceEventModel> eventList) {
+	public boolean importGitComments(String startDate, ArrayList<AttendanceEventModel> eventList) {
 		// eventList contains all attendance since 'startDate' with null comments
 		String lastGithubUser = "";
 		List<Repository> repoList = null;

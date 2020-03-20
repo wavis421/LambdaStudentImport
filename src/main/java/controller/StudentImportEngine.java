@@ -47,14 +47,14 @@ public class StudentImportEngine {
 		}
 	}
 
-	public void importAttendanceFromPike13(String startDate, Pike13DbImport pike13Api) {
+	public void importAttendanceFromPike13(String startDate, Pike13DbImport pike13Api, ArrayList<StudentModel> studentList) {
 		// Get attendance data from Pike13 for all students
 		ArrayList<AttendanceEventModel> eventList = pike13Api.getAttendance(startDate);
 
 		// Update changes in database
 		if (eventList.size() > 0) {
 			// Import attendance and then re-sort attendance list
-			sqlImportDb.importAttendance(startDate, eventList, true);
+			sqlImportDb.importAttendance(startDate, eventList, studentList, true);
 			sqlImportDb.createSortedAttendanceList();
 			System.out.println(eventList.size() + " attendance records imported from Pike13");
 		}
@@ -64,7 +64,7 @@ public class StudentImportEngine {
 		if (newStudents.size() > 0) {
 			eventList = pike13Api.getMissingAttendance(startDate, newStudents);
 			if (eventList.size() > 0) {
-				sqlImportDb.importAttendance(startDate, eventList, false);
+				sqlImportDb.importAttendance(startDate, eventList, studentList, false);
 				System.out.println(eventList.size() + " new student attendance records imported from Pike13");
 			}
 		}
@@ -77,19 +77,19 @@ public class StudentImportEngine {
 		}
 	}
 
-	public void importCourseAttendanceFromPike13(String startDate, String endDate, Pike13DbImport pike13Api) {
+	public void importCourseAttendanceFromPike13(String startDate, String endDate, Pike13DbImport pike13Api, ArrayList<StudentModel> studentList) {
 		// Get course attendance data from Pike13 for all students
 		ArrayList<AttendanceEventModel> eventList = pike13Api.getCourseAttendance(startDate, endDate);
 
 		// Update changes in database
 		if (eventList.size() > 0) {
-			sqlImportDb.importAttendance(startDate, eventList, false);
+			sqlImportDb.importAttendance(startDate, eventList, studentList, false);
 			System.out.println(eventList.size() + " course attendance records imported from Pike13, " + startDate
 					+ " to " + endDate);
 		}
 	}
 
-	public void importScheduleFromPike13(Pike13DbImport pike13Api) {
+	public void importScheduleFromPike13(Pike13DbImport pike13Api, ArrayList<StudentModel> studentList) {
 		String startDate = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"))
 				.minusDays(SCHEDULE_DAYS_IN_PAST).toString("yyyy-MM-dd");
 
@@ -110,7 +110,7 @@ public class StudentImportEngine {
 		}
 
 		// Update student age fields and count
-		updateScheduleData(filteredList, pike13Api);
+		updateScheduleData(filteredList, pike13Api, studentList);
 
 		// Update changes in database
 		if (filteredList.size() > 0) {
@@ -119,10 +119,8 @@ public class StudentImportEngine {
 		}
 	}
 
-	private void updateScheduleData(ArrayList<ScheduleModel> schedule, Pike13DbImport pike13Api) {
+	private void updateScheduleData(ArrayList<ScheduleModel> schedule, Pike13DbImport pike13Api, ArrayList<StudentModel> students) {
 		// Update the age fields and the attendance count for each class in schedule
-		ArrayList<StudentModel> students = sqlImportDb.getActiveStudents();
-
 		for (ScheduleModel sched : schedule) {
 			String className = sched.getClassName().trim();
 			int attCount = 0, ageCount = 0;
@@ -245,27 +243,29 @@ public class StudentImportEngine {
 		}
 	}
 
-	public void importGithubComments(String startDate, GithubApi githubApi) {
+	public void importGithubComments(String startDate, Pike13DbImport pike13Api, GithubApi githubApi, ArrayList<StudentModel> studentList) {
 		// Update github comments from "pending github" table.
 		// This table is populated each time a student commits to a league github classroom.
 		ArrayList<PendingGithubModel> githubList = sqlImportDb.getPendingGithubEvents();
-		ArrayList<AttendanceEventModel> eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, true);
+		ArrayList<AttendanceEventModel> attendList = sqlImportDb.getEventsWithNoComments(startDate, 0, true);
+		ArrayList<AttendanceEventModel> incompAttendList = pike13Api.getIncompleteAttend(startDate);
+		System.out.println(incompAttendList.size() + " incomplete attendance records imported from Pike13");
 
 		int origGithubListSize = githubList.size();
-		if (eventList.size() > 0)
-			sqlImportDb.updatePendingGithubComments(githubList, startDate, eventList);
+		if (attendList.size() > 0)
+			sqlImportDb.updatePendingGithubComments(githubList, startDate, attendList, incompAttendList, studentList);
 
 		// Get list of events with missing comments
-		eventList = sqlImportDb.getEventsWithNoComments(startDate, 0, false);
+		attendList = sqlImportDb.getEventsWithNoComments(startDate, 0, false);
 
-		if (eventList.size() > 0) {
+		if (attendList.size() > 0) {
 			// Import Github comments that are not in git classroom
-			githubApi.importGithubComments(startDate, eventList);
+			githubApi.importGitComments(startDate, attendList);
 
 			// Update any remaining null comments to show event was processed
-			githubApi.updateEmptyGithubComments(eventList);
+			githubApi.updateEmptyGithubComments(attendList);
 
-			System.out.println((eventList.size() + (origGithubListSize - githubList.size())) + " github records processed");
+			System.out.println((attendList.size() + (origGithubListSize - githubList.size())) + " github records processed");
 		}
 	}
 }

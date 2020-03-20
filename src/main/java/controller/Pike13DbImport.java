@@ -126,6 +126,11 @@ public class Pike13DbImport {
 			+ "                     [\"starts\",\"service_category\",\"Class\"],"
 			+ "                     [\"eq\",\"full_name\",\"NNNNNN\"]]]}}}";
 
+	private final String getEnrollmentStudentTracker2NotComplete = "},"
+			// Filter on State completed and since date OR make-up class for this week
+			+ "\"filter\":[\"and\",[[\"ne\",\"state\",\"completed\"],"
+			+ "                     [\"btw\",\"service_date\",[\"0000-00-00\",\"1111-11-11\"]]]]}}}";
+	
 	private final String getCourseEnrollmentStudentTracker2 = "},"
 			// Filter on course, state completed or enrolled and since date
 			+ "\"filter\":[\"and\",[[\"or\",[[\"eq\",\"state\",\"completed\"],"
@@ -268,6 +273,16 @@ public class Pike13DbImport {
 		// Get attendance for all students
 		return getEnrollmentByCmdString(getEnrollmentStudentTracker, enroll2);
 	}
+	
+	public ArrayList<AttendanceEventModel> getIncompleteAttend(String startDate) {
+		// Insert start date and end date into enrollment command string
+		DateTime today = new DateTime().withZone(DateTimeZone.forID("America/Los_Angeles"));
+		String enroll2 = getEnrollmentStudentTracker2NotComplete.replaceFirst("0000-00-00", startDate);
+		enroll2 = enroll2.replaceFirst("1111-11-11", today.toString("yyyy-MM-dd"));
+
+		// Get attendance for all students
+		return getEnrollmentByCmdString(getEnrollmentStudentTracker, enroll2);
+	}
 
 	private ArrayList<AttendanceEventModel> getEnrollmentByCmdString(String cmdString1, String cmdString2) {
 		ArrayList<AttendanceEventModel> eventList = new ArrayList<AttendanceEventModel>();
@@ -298,11 +313,14 @@ public class Pike13DbImport {
 				JsonArray eventArray = (JsonArray) jsonArray.get(i);
 				String eventName = pike13Conn.stripQuotes(eventArray.get(ENROLL_EVENT_NAME_IDX).toString());
 				String serviceDate = pike13Conn.stripQuotes(eventArray.get(ENROLL_SERVICE_DATE_IDX).toString());
+				int visitID = 0;
+				if (eventArray.get(ENROLL_VISIT_ID_IDX) != null && eventArray.get(ENROLL_VISIT_ID_IDX).toString().matches("\\d+"))
+					visitID = eventArray.getInt(ENROLL_VISIT_ID_IDX);
 
 				// Add event to list
 				if (!eventName.equals("") && !eventName.equals("\"\"") && !serviceDate.equals("")) {
 					eventList.add(new AttendanceEventModel(eventArray.getInt(ENROLL_CLIENT_ID_IDX),
-							eventArray.getInt(ENROLL_VISIT_ID_IDX),
+							visitID,
 							pike13Conn.stripQuotes(eventArray.get(ENROLL_FULL_NAME_IDX).toString()), serviceDate, 
 							pike13Conn.stripQuotes(eventArray.get(ENROLL_SERVICE_TIME_IDX).toString()), eventName,
 							pike13Conn.stripQuotes(eventArray.get(ENROLL_TEACHER_NAMES_IDX).toString()),
