@@ -1,5 +1,7 @@
 package lambda;
 
+import java.util.ArrayList;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -15,6 +17,7 @@ import model.LogDataModel;
 import model.MySqlDatabase;
 import model.MySqlDbImports;
 import model.MySqlDbLogging;
+import model.StudentModel;
 import model.StudentNameModel;
 
 /**
@@ -59,14 +62,17 @@ public class StudentImport {
 			Pike13Connect pike13Conn = new Pike13Connect(System.getenv("PIKE13_KEY"));
 			Pike13DbImport pike13Api = new Pike13DbImport(sqlImportDb, pike13Conn);
 			importer.importStudentsFromPike13(pike13Api);
-			importer.importAttendanceFromPike13(startDateString, pike13Api);
-			importer.importScheduleFromPike13(pike13Api);
+			
+			// Now update active student list and continue imports
+			ArrayList<StudentModel> studentList = sqlImportDb.getActiveStudents();
+			importer.importAttendanceFromPike13(startDateString, pike13Api, studentList);
+			importer.importScheduleFromPike13(pike13Api, studentList);
 			importer.importCoursesFromPike13(pike13Api);
-			importer.importCourseAttendanceFromPike13(startDateString, courseEndDate, pike13Api);
+			importer.importCourseAttendanceFromPike13(startDateString, courseEndDate, pike13Api, studentList);
 
 			// Connect to Github and import data
 			GithubApi githubApi = new GithubApi(sqlImportDb, System.getenv("GITHUB_KEY"));
-			importer.importGithubComments(startDateString, githubApi);
+			importer.importGithubComments(startDateString, pike13Api, githubApi, studentList);
 
 			MySqlDbLogging.insertLogData(LogDataModel.TRACKER_IMPORT_COMPLETE, new StudentNameModel("", "", false), 0,
 					" for " + today.toString("yyyy-MM-dd") + " ***");
