@@ -1271,13 +1271,15 @@ public class MySqlDbImports {
 			if (commitDate.compareTo(startDate) < 0 || gitUser.equals("wavis421") || gitUser.equals("keithagroves")
 					|| gitUser.equals("davedleague") || gitUser.equals("sebastiantroncoso93")
 					|| gitUser.equals("codybsauer") || gitUser.equals("shacheeparikh") || gitUser.equals("tylercwiltz")
+					|| gitUser.equals("colbyschexnayder")
 					|| gitUser.equals("mwoguri")      // Michiyo
 					|| gitUser.equals("jaleague")     // Jackie
 					|| gitUser.equals("zaelix")       // Mike
 					|| gitUser.equals("dencee")       // Daniel
 					|| gitUser.equals("mjfre")        // Matt
 					|| gitUser.equals("awasicek")     // Andrew
-					|| gitUser.equals("dkunkler"))    // David Kunkler, volunteer (parent of 3 students)
+					|| gitUser.equals("dkunkler")     // David Kunkler, volunteer (parent of 3 students)
+					|| gitUser.equals("rey-rey"))     // Rey Fidel, volunteer teacher
 			{
 				deletePendingGithubEvent(pendingGit.getPrimaryID());
 				githubList.remove(i);
@@ -2482,7 +2484,7 @@ public class MySqlDbImports {
 			String valueLC = values[i].toLowerCase();
 			if (values[i].startsWith("TA-") || valueLC.startsWith("trainee-") || valueLC.startsWith("open lab") || valueLC.startsWith("sub teacher")
 					|| valueLC.startsWith("padres game") || valueLC.startsWith("make-up")
-					|| valueLC.startsWith("intro to java") || valueLC.startsWith("league admin")
+					|| valueLC.startsWith("intro to java") || valueLC.startsWith("league admin") || valueLC.startsWith("coding camp")
 					|| valueLC.startsWith("summer prog") || valueLC.startsWith("need assist") || valueLC.startsWith("needs assist")
 					|| valueLC.startsWith("league workshop") || valueLC.startsWith("accepting student"))
 				continue;
