@@ -47,11 +47,11 @@ public class Pike13DbImport {
 	private final int EMERG_EMAIL_IDX = 12;
 	private final int MOBILE_PHONE_IDX = 13;
 	private final int ACCT_MGR_PHONE_IDX = 14;
-	private final int HOME_PHONE_IDX = 15;
-	private final int EMERG_PHONE_IDX = 16;
-	private final int BIRTHDATE_IDX = 17;
-	private final int CURRENT_LEVEL_IDX = 18;
-	private final int LAST_EXAM_SCORE_IDX = 19;
+	//private final int HOME_PHONE_IDX = 15;
+	private final int EMERG_PHONE_IDX = 15;
+	private final int BIRTHDATE_IDX = 16;
+	private final int CURRENT_LEVEL_IDX = 17;
+	private final int LAST_EXAM_SCORE_IDX = 18;
 
 	// Indices for enrollment data
 	private final int ENROLL_CLIENT_ID_IDX = 0;
@@ -89,7 +89,7 @@ public class Pike13DbImport {
 			+ "            \"" + GENDER_FIELD + "\",\"home_location_name\",\"first_visit_date\","
 			+ "            \"future_visits\",\"completed_visits\",\"email\",\"account_manager_emails\","
 			+ "            \"" + EMERG_CONTACT_EMAIL_FIELD + "\",\"phone\",\"account_manager_phones\","
-			+ "            \"" + HOME_PHONE_FIELD + "\",\"" + EMERG_CONTACT_PHONE_FIELD + "\",\"birthdate\","
+			+ "            \"" + EMERG_CONTACT_PHONE_FIELD + "\",\"birthdate\","
 			+ "            \"" + CURRENT_LEVEL_FIELD + "\",\"" + LAST_EXAM_SCORE_FIELD + "\"],"
 			// Page limit max is 500
 			+ "\"page\":{\"limit\":500";
@@ -241,7 +241,7 @@ public class Pike13DbImport {
 							pike13Conn.stripQuotes(personArray.get(EMERG_EMAIL_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(MOBILE_PHONE_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(ACCT_MGR_PHONE_IDX).toString()),
-							pike13Conn.stripQuotes(personArray.get(HOME_PHONE_IDX).toString()),
+							"", //pike13Conn.stripQuotes(personArray.get(HOME_PHONE_IDX).toString()),
 							pike13Conn.stripQuotes(personArray.get(EMERG_PHONE_IDX).toString()),
 							birthday, pike13Conn.stripQuotes(personArray.get(CURRENT_LEVEL_IDX).toString()),
 							personArray.getInt(FUTURE_VISITS_IDX), 
